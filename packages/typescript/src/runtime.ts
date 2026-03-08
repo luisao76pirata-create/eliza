@@ -330,10 +330,10 @@ export class AgentRuntime implements IAgentRuntime {
       this.#conversationLength =
         parseInt(String(opts.settings.CONVERSATION_LENGTH), 10) || 100;
     } else {
-      this.#conversationLength = (getNumberEnv(
+      this.#conversationLength = getNumberEnv(
         "CONVERSATION_LENGTH",
         100,
-      ) as number);
+      ) as number;
     }
     if (opts.adapter) {
       this.registerDatabaseAdapter(opts.adapter);
@@ -810,7 +810,8 @@ export class AgentRuntime implements IAgentRuntime {
     }
 
     // No need to transform agent's own ID
-    let agentEntity = (await this.adapter.getEntitiesByIds([this.agentId]))[0] ?? null;
+    let agentEntity =
+      (await this.adapter.getEntitiesByIds([this.agentId]))[0] ?? null;
 
     if (!agentEntity) {
       if (!existingAgent.id) {
@@ -827,7 +828,8 @@ export class AgentRuntime implements IAgentRuntime {
         throw new Error(errorMsg);
       }
 
-      agentEntity = (await this.adapter.getEntitiesByIds([this.agentId]))[0] ?? null;
+      agentEntity =
+        (await this.adapter.getEntitiesByIds([this.agentId]))[0] ?? null;
       if (!agentEntity)
         throw new Error(`Agent entity not found for ${this.agentId}`);
 
@@ -840,21 +842,26 @@ export class AgentRuntime implements IAgentRuntime {
     // Room creation and participant setup
     const room = await this.getRoom(this.agentId);
     if (!room) {
-      await this.adapter.createRooms([{
-        id: this.agentId,
-        name: this.character.name,
-        source: "elizaos",
-        type: ChannelType.SELF,
-        channelId: this.agentId,
-        messageServerId: this.agentId,
-        worldId: this.agentId,
-      }]);
+      await this.adapter.createRooms([
+        {
+          id: this.agentId,
+          name: this.character.name,
+          source: "elizaos",
+          type: ChannelType.SELF,
+          channelId: this.agentId,
+          messageServerId: this.agentId,
+          worldId: this.agentId,
+        },
+      ]);
     }
     const participants = await this.adapter.getParticipantsForRoom(
       this.agentId,
     );
     if (!participants.includes(this.agentId)) {
-      const added = await this.adapter.createRoomParticipants([this.agentId], this.agentId);
+      const added = await this.adapter.createRoomParticipants(
+        [this.agentId],
+        this.agentId,
+      );
       if (!added) {
         throw new Error(
           `Failed to add agent ${this.agentId} as participant to its own room`,
@@ -1137,10 +1144,10 @@ export class AgentRuntime implements IAgentRuntime {
 
   /**
    * Get the messaging adapter if available
-   * 
+   *
    * WHY: Messaging functionality is optional (only SQL adapters support it).
    * Client plugins check this before using messaging features.
-   * 
+   *
    * @returns IMessagingAdapter if the current adapter implements it, null otherwise
    */
   getMessagingAdapter(): IMessagingAdapter | null {
@@ -1873,27 +1880,29 @@ export class AgentRuntime implements IAgentRuntime {
               error: actionResult.error,
             }
           : undefined;
-        await this.adapter.createLogs([{
-          entityId: message.entityId,
-          roomId: message.roomId,
-          type: "action",
-          body: {
-            action: action.name,
-            actionId,
-            message: message.content.text,
-            messageId: message.id,
-            result: logResult,
-            isVoidReturn,
-            prompts: this.currentActionContext?.prompts || [],
-            promptCount: this.currentActionContext?.prompts?.length || 0,
-            runId,
-            parentRunId,
-            ...(actionPlan && {
-              planStep: `${actionPlan.currentStep}/${actionPlan.totalSteps}`,
-              planThought: actionPlan.thought,
-            }),
+        await this.adapter.createLogs([
+          {
+            entityId: message.entityId,
+            roomId: message.roomId,
+            type: "action",
+            body: {
+              action: action.name,
+              actionId,
+              message: message.content.text,
+              messageId: message.id,
+              result: logResult,
+              isVoidReturn,
+              prompts: this.currentActionContext?.prompts || [],
+              promptCount: this.currentActionContext?.prompts?.length || 0,
+              runId,
+              parentRunId,
+              ...(actionPlan && {
+                planStep: `${actionPlan.currentStep}/${actionPlan.totalSteps}`,
+                planThought: actionPlan.thought,
+              }),
+            },
           },
-        }]);
+        ]);
 
         // Clear action context
         this.currentActionContext = undefined;
@@ -1984,17 +1993,19 @@ export class AgentRuntime implements IAgentRuntime {
             callback,
             responses,
           );
-          this.adapter.createLogs([{
-            entityId: message.entityId,
-            roomId: message.roomId,
-            type: "evaluator",
-            body: {
-              evaluator: evaluator.name,
-              messageId: message.id,
-              message: message.content.text,
-              runId: this.getCurrentRunId(),
+          this.adapter.createLogs([
+            {
+              entityId: message.entityId,
+              roomId: message.roomId,
+              type: "evaluator",
+              body: {
+                evaluator: evaluator.name,
+                messageId: message.id,
+                message: message.content.text,
+                runId: this.getCurrentRunId(),
+              },
             },
-          }]);
+          ]);
         }
       }),
     );
@@ -2198,7 +2209,9 @@ export class AgentRuntime implements IAgentRuntime {
     const entityToUpsert: Entity = {
       id: entityId,
       names: entity
-        ? [...new Set([...(entity.names || []), ...names])].filter(Boolean) as string[]
+        ? ([...new Set([...(entity.names || []), ...names])].filter(
+            Boolean,
+          ) as string[])
         : names,
       metadata: entity
         ? {
@@ -2284,7 +2297,10 @@ export class AgentRuntime implements IAgentRuntime {
     const participants = await this.adapter.getParticipantsForRoom(roomId);
     if (!participants.includes(entityId)) {
       // Add participant using the ID
-      const added = await this.adapter.createRoomParticipants([entityId], roomId);
+      const added = await this.adapter.createRoomParticipants(
+        [entityId],
+        roomId,
+      );
 
       if (!added) {
         throw new Error(
@@ -2305,7 +2321,6 @@ export class AgentRuntime implements IAgentRuntime {
     }
   }
 
-
   async getParticipantsForEntity(entityId: UUID): Promise<Participant[]> {
     return await this.adapter.getParticipantsForEntity(entityId);
   }
@@ -2323,28 +2338,33 @@ export class AgentRuntime implements IAgentRuntime {
     return ids.length > 0;
   }
 
-  async createRoomParticipants(entityIds: UUID[], roomId: UUID): Promise<UUID[]> {
+  async createRoomParticipants(
+    entityIds: UUID[],
+    roomId: UUID,
+  ): Promise<UUID[]> {
     return await this.adapter.createRoomParticipants(entityIds, roomId);
   }
 
   /**
    * Ensure the existence of a world.
-   * 
+   *
    * WHY upsert: Eliminates race condition where concurrent agent bootstraps
    * could both try to create the same world. Upsert is atomic.
    */
   async ensureWorldExists({ id, name, messageServerId, metadata }: World) {
     // Check if world exists (for logging only)
     const world = (await this.adapter.getWorldsByIds([id]))[0] ?? null;
-    
+
     // Atomic upsert - handles both insert and update
-    await this.adapter.upsertWorlds([{
-      id,
-      name,
-      agentId: this.agentId,
-      messageServerId,
-      metadata,
-    }]);
+    await this.adapter.upsertWorlds([
+      {
+        id,
+        name,
+        agentId: this.agentId,
+        messageServerId,
+        metadata,
+      },
+    ]);
 
     this.logger.debug(
       { src: "agent", agentId: this.agentId, worldId: id, messageServerId },
@@ -2354,7 +2374,7 @@ export class AgentRuntime implements IAgentRuntime {
 
   /**
    * Ensure the existence of a room.
-   * 
+   *
    * WHY upsert: Eliminates race condition where concurrent connection attempts
    * (e.g., Discord bot receiving messages in same channel simultaneously) could
    * both try to create the same room. Upsert is atomic.
@@ -2370,22 +2390,24 @@ export class AgentRuntime implements IAgentRuntime {
     metadata,
   }: Room) {
     if (!worldId) throw new Error("worldId is required");
-    
+
     // Check if room exists (for logging only)
     const room = await this.getRoom(id);
-    
+
     // Atomic upsert - handles both insert and update
-    await this.adapter.upsertRooms([{
-      id,
-      name,
-      agentId: this.agentId,
-      source,
-      type,
-      channelId,
-      messageServerId,
-      worldId,
-      metadata,
-    }]);
+    await this.adapter.upsertRooms([
+      {
+        id,
+        name,
+        agentId: this.agentId,
+        source,
+        type,
+        channelId,
+        messageServerId,
+        worldId,
+        metadata,
+      },
+    ]);
 
     this.logger.debug(
       { src: "agent", agentId: this.agentId, channelId: id },
@@ -3161,29 +3183,31 @@ export class AgentRuntime implements IAgentRuntime {
         : typeof response === "string"
           ? response
           : undefined;
-    this.adapter.createLogs([{
-      entityId: this.agentId,
-      roomId: this.currentRoomId ?? this.agentId,
-      body: {
-        modelType,
-        modelKey,
-        prompt: promptContent ?? undefined,
-        systemPrompt: this.character.system ?? undefined,
-        runId: this.getCurrentRunId(),
-        timestamp: Date.now(),
-        executionTime: elapsedTime,
-        provider:
-          provider || this.models.get(modelKey)?.[0]?.provider || "unknown",
-        actionContext: this.currentActionContext
-          ? {
-              actionName: this.currentActionContext.actionName,
-              actionId: this.currentActionContext.actionId,
-            }
-          : undefined,
-        response: responseValue,
+    this.adapter.createLogs([
+      {
+        entityId: this.agentId,
+        roomId: this.currentRoomId ?? this.agentId,
+        body: {
+          modelType,
+          modelKey,
+          prompt: promptContent ?? undefined,
+          systemPrompt: this.character.system ?? undefined,
+          runId: this.getCurrentRunId(),
+          timestamp: Date.now(),
+          executionTime: elapsedTime,
+          provider:
+            provider || this.models.get(modelKey)?.[0]?.provider || "unknown",
+          actionContext: this.currentActionContext
+            ? {
+                actionName: this.currentActionContext.actionName,
+                actionId: this.currentActionContext.actionId,
+              }
+            : undefined,
+          response: responseValue,
+        },
+        type: `useModel:${modelKey}`,
       },
-      type: `useModel:${modelKey}`,
-    }]);
+    ]);
   }
 
   async useModel<T extends keyof ModelParamsMap, R = ModelResultMap[T]>(
@@ -3194,28 +3218,31 @@ export class AgentRuntime implements IAgentRuntime {
     let modelKey =
       typeof modelType === "string" ? modelType : ModelType[modelType];
 
-    // Get call stack to identify caller
-    const stack = new Error().stack;
-    const callerInfo =
-      stack
-        ?.split("\n")
-        .slice(2, 5) // Get first 3 frames after this function
-        .map((line) => line.trim().replace(/^at\s+/, ""))
-        .join(" <- ") || "unknown";
+    // Only capture call stack for debug logging when debug level is enabled
+    const isDebugEnabled =
+      this.logger.level === "debug" || this.logger.level === "trace";
+    if (isDebugEnabled) {
+      const stack = new Error().stack;
+      const callerInfo =
+        stack
+          ?.split("\n")
+          .slice(2, 5) // Get first 3 frames after this function
+          .map((line) => line.trim().replace(/^at\s+/, ""))
+          .join(" <- ") || "unknown";
 
-    // Log model usage with caller information
-    this.logger.debug(
-      {
-        src: "agent",
-        agentId: this.agentId,
-        model: modelKey,
-        caller: callerInfo,
-        provider: provider || "default",
-        actionContext: this.currentActionContext?.actionName,
-        runId: this.getCurrentRunId(),
-      },
-      "useModel called",
-    );
+      this.logger.debug(
+        {
+          src: "agent",
+          agentId: this.agentId,
+          model: modelKey,
+          caller: callerInfo,
+          provider: provider || "default",
+          actionContext: this.currentActionContext?.actionName,
+          runId: this.getCurrentRunId(),
+        },
+        "useModel called",
+      );
+    }
 
     // Apply LLM mode override for text generation models
     const llmMode = this.getLLMMode();
@@ -4677,7 +4704,9 @@ IMPORTANT: Your response must ONLY contain the ${CONTAINER_START}${CONTAINER_END
   async upsertAgents(agents: Partial<Agent>[]): Promise<void> {
     return await this.adapter.upsertAgents(agents);
   }
-  async updateAgents(updates: Array<{ agentId: UUID; agent: Partial<Agent> }>): Promise<boolean> {
+  async updateAgents(
+    updates: Array<{ agentId: UUID; agent: Partial<Agent> }>,
+  ): Promise<boolean> {
     return await this.adapter.updateAgents(updates);
   }
   async deleteAgents(agentIds: UUID[]): Promise<boolean> {
@@ -4695,7 +4724,8 @@ IMPORTANT: Your response must ONLY contain the ${CONTAINER_START}${CONTAINER_END
     // guarantees only one succeeds.
 
     // Fetch existing agent to perform intelligent merge (if it exists)
-    const existingAgent = (await this.adapter.getAgentsByIds([agent.id]))[0] ?? null;
+    const existingAgent =
+      (await this.adapter.getAgentsByIds([agent.id]))[0] ?? null;
 
     let agentToUpsert: Partial<Agent>;
 
@@ -4757,7 +4787,8 @@ IMPORTANT: Your response must ONLY contain the ${CONTAINER_START}${CONTAINER_END
     await this.adapter.upsertAgents([agentToUpsert]);
 
     // Fetch and return the final state
-    const refreshedAgent = (await this.adapter.getAgentsByIds([agent.id]))[0] ?? null;
+    const refreshedAgent =
+      (await this.adapter.getAgentsByIds([agent.id]))[0] ?? null;
 
     if (!refreshedAgent) {
       throw new Error(`Failed to retrieve agent after upsert: ${agent.id}`);
@@ -5045,11 +5076,20 @@ IMPORTANT: Your response must ONLY contain the ${CONTAINER_START}${CONTAINER_END
     return await this.adapter.getLogsByIds(logIds);
   }
 
-  async createLogs(params: Array<{ body: LogBody; entityId: UUID; roomId: UUID; type: string }>): Promise<void> {
+  async createLogs(
+    params: Array<{
+      body: LogBody;
+      entityId: UUID;
+      roomId: UUID;
+      type: string;
+    }>,
+  ): Promise<void> {
     return await this.adapter.createLogs(params);
   }
 
-  async updateLogs(logs: Array<{ id: UUID; updates: Partial<Log> }>): Promise<void> {
+  async updateLogs(
+    logs: Array<{ id: UUID; updates: Partial<Log> }>,
+  ): Promise<void> {
     return await this.adapter.updateLogs(logs);
   }
 
@@ -5175,7 +5215,9 @@ IMPORTANT: Your response must ONLY contain the ${CONTAINER_START}${CONTAINER_END
     return await this.adapter.getCaches<T>(keys);
   }
 
-  async setCaches<T>(entries: Array<{ key: string; value: T }>): Promise<boolean> {
+  async setCaches<T>(
+    entries: Array<{ key: string; value: T }>,
+  ): Promise<boolean> {
     return await this.adapter.setCaches<T>(entries);
   }
 
@@ -5213,7 +5255,12 @@ IMPORTANT: Your response must ONLY contain the ${CONTAINER_START}${CONTAINER_END
     return await this.adapter.deleteTasks([id]);
   }
 
-  async log(params: { body: LogBody; entityId: UUID; roomId: UUID; type: string }): Promise<void> {
+  async log(params: {
+    body: LogBody;
+    entityId: UUID;
+    roomId: UUID;
+    type: string;
+  }): Promise<void> {
     return await this.adapter.createLogs([params]);
   }
 
@@ -5243,7 +5290,9 @@ IMPORTANT: Your response must ONLY contain the ${CONTAINER_START}${CONTAINER_END
     return await this.adapter.getTasksByIds(taskIds);
   }
 
-  async updateTasks(updates: Array<{ id: UUID; task: Partial<Task> }>): Promise<void> {
+  async updateTasks(
+    updates: Array<{ id: UUID; task: Partial<Task> }>,
+  ): Promise<void> {
     return await this.adapter.updateTasks(updates);
   }
 
@@ -5303,7 +5352,10 @@ IMPORTANT: Your response must ONLY contain the ${CONTAINER_START}${CONTAINER_END
       limit: params.limit,
     });
   }
-  async getEntitiesByNames(params: { names: string[]; agentId?: UUID }): Promise<Entity[]> {
+  async getEntitiesByNames(params: {
+    names: string[];
+    agentId?: UUID;
+  }): Promise<Entity[]> {
     return await this.adapter.getEntitiesByNames({
       names: params.names,
       agentId: params.agentId ?? this.agentId,
@@ -5346,7 +5398,12 @@ IMPORTANT: Your response must ONLY contain the ${CONTAINER_START}${CONTAINER_END
   ): Promise<Component | null> {
     // This one doesn't have a batch equivalent for the entity+type query
     // It uses the getComponents query method
-    return await this.adapter.getComponent(entityId, type, worldId, sourceEntityId);
+    return await this.adapter.getComponent(
+      entityId,
+      type,
+      worldId,
+      sourceEntityId,
+    );
   }
 
   async updateComponent(component: Component): Promise<void> {
@@ -5394,7 +5451,9 @@ IMPORTANT: Your response must ONLY contain the ${CONTAINER_START}${CONTAINER_END
       componentType: type,
       agentId: agentId ?? this.agentId,
       includeAllComponents: false, // Only return matched components
-      ...(options?.entityContext != null && { entityContext: options.entityContext }),
+      ...(options?.entityContext != null && {
+        entityContext: options.entityContext,
+      }),
     });
 
     // Flatten components from all entities
@@ -5437,16 +5496,20 @@ IMPORTANT: Your response must ONLY contain the ${CONTAINER_START}${CONTAINER_END
   }
 
   // Batch relationship methods
-  async createRelationships(relationships: Array<{
-    sourceEntityId: UUID;
-    targetEntityId: UUID;
-    tags?: string[];
-    metadata?: Metadata;
-  }>): Promise<UUID[]> {
+  async createRelationships(
+    relationships: Array<{
+      sourceEntityId: UUID;
+      targetEntityId: UUID;
+      tags?: string[];
+      metadata?: Metadata;
+    }>,
+  ): Promise<UUID[]> {
     return await this.adapter.createRelationships(relationships);
   }
 
-  async getRelationshipsByIds(relationshipIds: UUID[]): Promise<Relationship[]> {
+  async getRelationshipsByIds(
+    relationshipIds: UUID[],
+  ): Promise<Relationship[]> {
     return await this.adapter.getRelationshipsByIds(relationshipIds);
   }
 
@@ -5487,11 +5550,15 @@ IMPORTANT: Your response must ONLY contain the ${CONTAINER_START}${CONTAINER_END
   // WHY no redaction here: batch callers are responsible for their own
   // content. The single-item createMemory() wrapper below handles
   // redaction for the common case.
-  async createMemories(memories: Array<{ memory: Memory; tableName: string; unique?: boolean }>): Promise<UUID[]> {
+  async createMemories(
+    memories: Array<{ memory: Memory; tableName: string; unique?: boolean }>,
+  ): Promise<UUID[]> {
     return await this.adapter.createMemories(memories);
   }
 
-  async updateMemories(memories: Array<Partial<Memory> & { id: UUID; metadata?: MemoryMetadata }>): Promise<void> {
+  async updateMemories(
+    memories: Array<Partial<Memory> & { id: UUID; metadata?: MemoryMetadata }>,
+  ): Promise<void> {
     return await this.adapter.updateMemories(memories);
   }
 
@@ -5512,7 +5579,11 @@ IMPORTANT: Your response must ONLY contain the ${CONTAINER_START}${CONTAINER_END
   // tokens, and other secrets are scrubbed from memory content. Internal
   // runtime code deliberately calls this wrapper (not adapter.createMemories
   // directly) to ensure redaction always happens.
-  async createMemory(memory: Memory, tableName: string, unique?: boolean): Promise<UUID> {
+  async createMemory(
+    memory: Memory,
+    tableName: string,
+    unique?: boolean,
+  ): Promise<UUID> {
     if (unique !== undefined) memory.unique = unique;
 
     // Redact any secrets from memory content before storing
@@ -5530,11 +5601,15 @@ IMPORTANT: Your response must ONLY contain the ${CONTAINER_START}${CONTAINER_END
       };
     }
 
-    const ids = await this.adapter.createMemories([{ memory, tableName, unique }]);
+    const ids = await this.adapter.createMemories([
+      { memory, tableName, unique },
+    ]);
     return ids[0];
   }
 
-  async updateMemory(memory: Partial<Memory> & { id: UUID; metadata?: MemoryMetadata }): Promise<boolean> {
+  async updateMemory(
+    memory: Partial<Memory> & { id: UUID; metadata?: MemoryMetadata },
+  ): Promise<boolean> {
     await this.adapter.updateMemories([memory]);
     return true; // Successfully updated if no error thrown
   }
@@ -5544,15 +5619,19 @@ IMPORTANT: Your response must ONLY contain the ${CONTAINER_START}${CONTAINER_END
   }
 
   // ── Participant passthroughs & wrappers ──────────────────────────────
-  async deleteParticipants(participants: Array<{ entityId: UUID; roomId: UUID }>): Promise<boolean> {
+  async deleteParticipants(
+    participants: Array<{ entityId: UUID; roomId: UUID }>,
+  ): Promise<boolean> {
     return await this.adapter.deleteParticipants(participants);
   }
 
-  async updateParticipants(participants: Array<{
-    entityId: UUID;
-    roomId: UUID;
-    updates: Partial<Participant>;
-  }>): Promise<void> {
+  async updateParticipants(
+    participants: Array<{
+      entityId: UUID;
+      roomId: UUID;
+      updates: Partial<Participant>;
+    }>,
+  ): Promise<void> {
     return await this.adapter.updateParticipants(participants);
   }
 
@@ -5714,11 +5793,15 @@ IMPORTANT: Your response must ONLY contain the ${CONTAINER_START}${CONTAINER_END
     return await this.adapter.deletePairingRequests(ids);
   }
 
-  async createPairingAllowlistEntries(entries: PairingAllowlistEntry[]): Promise<UUID[]> {
+  async createPairingAllowlistEntries(
+    entries: PairingAllowlistEntry[],
+  ): Promise<UUID[]> {
     return await this.adapter.createPairingAllowlistEntries(entries);
   }
 
-  async updatePairingAllowlistEntries(entries: PairingAllowlistEntry[]): Promise<void> {
+  async updatePairingAllowlistEntries(
+    entries: PairingAllowlistEntry[],
+  ): Promise<void> {
     return await this.adapter.updatePairingAllowlistEntries(entries);
   }
 
@@ -5740,7 +5823,9 @@ IMPORTANT: Your response must ONLY contain the ${CONTAINER_START}${CONTAINER_END
     return await this.adapter.deletePairingRequests([id]);
   }
 
-  async createPairingAllowlistEntry(entry: PairingAllowlistEntry): Promise<UUID> {
+  async createPairingAllowlistEntry(
+    entry: PairingAllowlistEntry,
+  ): Promise<UUID> {
     const ids = await this.adapter.createPairingAllowlistEntries([entry]);
     return ids[0];
   }

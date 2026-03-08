@@ -9,8 +9,21 @@ import type {
 } from "../../types/index.ts";
 import { ChannelType } from "../../types/index.ts";
 
-// Track entities we've already warned about (per runtime session)
-const warnedUnnamedEntities = new Set<string>();
+// Track entities we've already warned about per runtime instance
+// Using WeakMap ensures cleanup when runtime is garbage collected
+const warnedUnnamedEntitiesPerRuntime = new WeakMap<
+  IAgentRuntime,
+  Set<string>
+>();
+
+function getWarnedEntitiesSet(runtime: IAgentRuntime): Set<string> {
+  let set = warnedUnnamedEntitiesPerRuntime.get(runtime);
+  if (!set) {
+    set = new Set<string>();
+    warnedUnnamedEntitiesPerRuntime.set(runtime, set);
+  }
+  return set;
+}
 
 /**
  * Role provider that retrieves roles in the server based on the provided runtime, message, and state.
@@ -149,8 +162,9 @@ export const roleProvider: Provider = {
       }
 
       if (!name || !username || !names) {
-        // Only log once per entity per runtime session to reduce log spam
-        if (!warnedUnnamedEntities.has(entityId)) {
+        // Only log once per entity per runtime instance to reduce log spam
+        const warnedSet = getWarnedEntitiesSet(runtime);
+        if (!warnedSet.has(entityId)) {
           logger.warn(
             {
               src: "plugin:bootstrap:provider:roles",
@@ -159,7 +173,7 @@ export const roleProvider: Provider = {
             },
             "User has no name or username, skipping",
           );
-          warnedUnnamedEntities.add(entityId);
+          warnedSet.add(entityId);
         }
         continue;
       }

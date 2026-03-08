@@ -372,11 +372,7 @@ function ensureFileLog(): boolean {
 
   _fileLogState = "disabled";
   try {
-    if (
-      typeof process === "undefined" ||
-      !process.env ||
-      !process.versions
-    )
+    if (typeof process === "undefined" || !process.env || !process.versions)
       return false;
     if (!process.versions.node && !process.versions.bun) return false;
 
@@ -399,12 +395,13 @@ function ensureFileLog(): boolean {
     const logFilePath = isBooleanFlag
       ? pathMod.join(process.cwd(), "output.log")
       : logFileEnv.trim();
-    const promptLogPath = pathMod.join(process.cwd(), "prompts.log");
-    const chatLogPath = pathMod.join(process.cwd(), "chat.log");
+    const logDir = isBooleanFlag ? process.cwd() : pathMod.dirname(logFilePath);
+    const promptLogPath = pathMod.join(logDir, "prompts.log");
+    const chatLogPath = pathMod.join(logDir, "chat.log");
 
-    _fileLogFd = fs.openSync(logFilePath, "w");
-    _promptLogFd = fs.openSync(promptLogPath, "w");
-    _chatLogFd = fs.openSync(chatLogPath, "w");
+    _fileLogFd = fs.openSync(logFilePath, "a");
+    _promptLogFd = fs.openSync(promptLogPath, "a");
+    _chatLogFd = fs.openSync(chatLogPath, "a");
     _fileLogState = "active";
 
     process.on("exit", () => {
