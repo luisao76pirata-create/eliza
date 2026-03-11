@@ -1,2 +1,13 @@
 [build]
-cmd = "bun run build --filter=!@elizaos/rust"
+buildCommand = "bun run build --filter=!@elizaos/rust --filter=!@elizaos/sweagent-root"
+```
+
+Haz commit y Railway redesplegará automáticamente.
+
+---
+
+### O directamente en Railway Settings
+
+En **Settings → Build**, busca el campo **"Build Command"** y pon ahí:
+```
+bun run build --filter=!@elizaos/rust --filter=!@elizaos/sweagent-root
