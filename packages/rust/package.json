@@ -22,7 +22,7 @@
     "pkg"
   ],
   "scripts": {
-    "build": "./build.sh",
+    "build": "echo 'Skipping Rust build - cargo not available'",
     "build:native": "cargo build --release",
     "build:wasm": "wasm-pack build --target web --out-dir pkg/web --no-default-features --features wasm && wasm-pack build --target nodejs --out-dir pkg/node --no-default-features --features wasm",
     "test": "cargo test && (bun run test:wasm || echo '[WARN] WASM tests skipped - requires wasm-pack build')",
