@@ -32,7 +32,7 @@ RUN echo "=== Build Environment Info ===" && \
     echo "CPU info: $(nproc) cores" && \
     echo "Disk space: $(df -h /)" && \
     echo "=== Starting Build ===" && \
-    TURBO_CONCURRENCY=2 bun run build --concurrency=2 --verbosity=1 || (echo "=== Build Failed - System State ===" && df -h / && exit 1)
+    TURBO_CONCURRENCY=2 bunx turbo run build --filter=!@elizaos/config --concurrency=2 --verbosity=1 || (echo "=== Build Failed - System State ===" && df -h / && exit 1)
 
 FROM node:23.3.0-slim
 
