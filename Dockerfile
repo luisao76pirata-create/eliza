@@ -21,6 +21,7 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 
 COPY package.json turbo.json tsconfig.json lerna.json renovate.json .npmrc ./
 COPY scripts ./scripts
+COPY build-utils.ts ./
 COPY packages ./packages
 
 RUN SKIP_POSTINSTALL=1 bun install --no-cache
