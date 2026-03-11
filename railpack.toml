@@ -1,0 +1,2 @@
+[build]
+cmd = "bun run build --filter=!@elizaos/rust"
